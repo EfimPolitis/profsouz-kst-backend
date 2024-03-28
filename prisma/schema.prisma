@@ -12,13 +12,86 @@ model User {
   Email    String    @map("email")
   UserName String?   @unique @map("user_name")
   Password String    @map("password")
-  UserRole EUserRole @default(USER) @map("role")
+  Role     EUserRole @default(USER) @map("role")
 
   CreatedAt DateTime @default(now()) @map("created_at")
   UpdatedAt DateTime @updatedAt @map("update_at")
+
+  request   Request[]
+  booking   Booking[]
+  comment   Comment[]
+  sender    Message[] @relation("sender")
+  recipient Message[] @relation("recipient")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String   @unique
+  description String
+  imageUrl    String   @map("image_url")
+  link        String
+  allTickets  Int      @map("all_tickets")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  request Request[]
+  booking Booking[]
+}
+
+model Request {
+  id           String   @id @default(uuid())
+  ticketsCount Int      @map("tickets_count")
+  status       EStatus
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  User   User   @relation(fields: [userId], references: [UserID])
+  userId String
+
+  Event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+}
+
+model Booking {
+  id           String   @id @default(uuid())
+  ticketsCount Int      @map("tickets_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [UserID])
+  userId String
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [UserID])
+  userId String
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  sender   User   @relation(name: "sender", fields: [senderId], references: [UserID])
+  senderId String @map("sender_id")
+
+  recipient   User   @relation(name: "recipient", fields: [recipientId], references: [UserID])
+  recipientId String @map("recipient_id")
 }
 
 enum EUserRole {
-  USER
   ADMIN
+  MODER
+  USER
+}
+
+enum EStatus {
+  PENDING
+  APPROVED
+  REJECT
 }

@@ -3,6 +3,7 @@ import { hash } from 'argon2';
 
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -11,47 +12,80 @@ export class UserService {
   async getUsers() {
     return this.prisma.user.findMany({
       select: {
-        UserName: true,
-        Email: true,
-        UserID: true,
-        Password: false,
+        userName: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        email: true,
+        id: true,
+        role: true,
+        createdAt: true,
+        password: false,
       },
     });
   }
 
-  async getById(UserID: string) {
+  async searchUser(dto) {
+    const prismaSearch: Prisma.UserWhereInput = dto.search
+      ? {
+          userName: {
+            contains: dto.search,
+            mode: 'insensitive',
+          },
+        }
+      : {};
+
+    const users = this.prisma.user.findMany({
+      where: prismaSearch,
+    });
+
+    return users;
+  }
+
+  async getProfile(id: string) {
+    const profile = await this.getById(id);
+    const { password, ...rest } = profile;
+
+    return rest;
+  }
+
+  async getById(id: string) {
     return this.prisma.user.findUnique({
       where: {
-        UserID,
+        id,
       },
     });
   }
 
-  async getByUserName(UserName: string) {
+  async getByUserName(userName: string) {
     return this.prisma.user.findUnique({
       where: {
-        UserName,
+        userName,
       },
     });
   }
 
   async create(dto: CreateUserDto) {
-    const user = {
-      Email: dto.Email,
-      UserName: dto.UserName,
-      Password: await hash(dto.Password),
-      UserRole: dto?.UserRole,
-    };
+    const { userName, firstName, lastName, middleName, email, password, role } =
+      dto;
 
     return this.prisma.user.create({
-      data: user,
+      data: {
+        userName,
+        firstName,
+        lastName,
+        middleName,
+        email,
+        password,
+        role,
+      },
     });
   }
 
-  async delete(UserID: string) {
+  async delete(id: string) {
     return this.prisma.user.delete({
       where: {
-        UserID,
+        id,
       },
     });
   }

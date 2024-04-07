@@ -15,6 +15,7 @@ import { CreateUserDto } from 'src/user/dto/create-user.dto';
 export class AuthService {
   EXPIRE_DAY_REFRESH_TOKEN = 1;
   REFRESH_TOKEN_NAME = 'refreshToken';
+  ACCESS_TOKEN_NAME = 'accessToken';
 
   constructor(
     private jwt: JwtService,
@@ -22,8 +23,8 @@ export class AuthService {
   ) {}
 
   async login(dto: AuthDto) {
-    const { Password, ...user } = await this.validateUser(dto);
-    const tokens = await this.issueTokens(user.UserID);
+    const { password, ...user } = await this.validateUser(dto);
+    const tokens = await this.issueTokens(user.id);
 
     return {
       user,
@@ -32,14 +33,13 @@ export class AuthService {
   }
 
   async register(dto: CreateUserDto) {
-    console.log(dto);
-    const oldUser = await this.userService.getByUserName(dto.UserName);
+    const oldUser = await this.userService.getByUserName(dto.userName);
 
     if (oldUser) throw new BadRequestException('User alredy exists');
 
-    const { Password, ...user } = await this.userService.create(dto);
+    const { password, ...user } = await this.userService.create(dto);
 
-    const tokens = await this.issueTokens(user.UserID);
+    const tokens = await this.issueTokens(user.id);
 
     return {
       user,
@@ -52,26 +52,27 @@ export class AuthService {
 
     if (!result) throw new UnauthorizedException('Invalid token');
 
-    const { Password, ...user } = await this.userService.getById(result.id);
+    const { password, ...user } = await this.userService.getById(result.id);
 
     return user;
   }
 
   async getNewTokens(refreshToken: string) {
     const result = await this.jwt.verifyAsync(refreshToken);
-    console.log(result.id, 2);
+
     if (!result) throw new UnauthorizedException('Invalid refresh token');
 
-    const { Password, ...user } = await this.userService.getById(result.id);
-    const tokens = await this.issueTokens(user.UserID);
+    const { password, ...user } = await this.userService.getById(result.id);
+
+    const tokens = await this.issueTokens(user.id);
     return {
       user,
       ...tokens,
     };
   }
 
-  private async issueTokens(userId: string) {
-    const data = { id: userId };
+  private async issueTokens(id: string) {
+    const data = { id };
 
     const accessToken = this.jwt.sign(data, {
       expiresIn: '1h',
@@ -85,11 +86,11 @@ export class AuthService {
   }
 
   private async validateUser(dto: AuthDto) {
-    const user = await this.userService.getByUserName(dto.UserName);
+    const user = await this.userService.getByUserName(dto.userName);
 
     if (!user) throw new NotFoundException('Not found user!');
 
-    const isValid = await verify(user.Password, dto.Password);
+    const isValid = await verify(user.password, dto.password);
 
     if (!isValid) throw new UnauthorizedException('Invalid password!');
 

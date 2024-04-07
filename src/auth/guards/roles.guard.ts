@@ -8,6 +8,7 @@ export class RolesGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     const roles = this.reflector.get(Roles, ctx.getHandler());
+
     if (!roles) return true;
 
     const { user } = ctx.switchToHttp().getRequest();

@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
 import { UserService } from '../user/user.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { Auth } from './decorators/auth.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -41,16 +42,19 @@ export class AuthController {
     @Body() dto: CreateUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log(dto);
     const { refreshToken, ...response } = await this.authService.register(dto);
     this.authService.addRefreshTokenToResponse(res, refreshToken);
+
     return response;
   }
 
   @HttpCode(200)
-  @Get(':token')
-  async getUser(@Param('token') token: string) {
-    return this.authService.getByToken(token);
+  @Get('access-token')
+  async getUser(@Req() req: Request) {
+    const accessToken = req.headers.authorization.split(' ')[1];
+    const { role, ...user } = await this.authService.getByToken(accessToken);
+
+    return { role };
   }
 
   @HttpCode(200)

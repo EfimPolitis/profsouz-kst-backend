@@ -33,7 +33,6 @@ export class CategoryController {
     @Param('id') id: string,
     @Body() dto: CreateCategoryDto,
   ) {
-    console.log(id);
     return this.categoryService.update(id, dto);
   }
 

@@ -1,5 +1,5 @@
 import { CreateEventDto } from './create-event.dto';
 
 export class UpdateEventDto extends CreateEventDto {
-  id: string;
+  eventId: string;
 }

@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -30,14 +31,14 @@ export class EventController {
   }
 
   @Auth('ADMIN')
-  @Post()
+  @Patch(':id')
   async updateEvent(@Body() dto: UpdateEventDto) {
     return this.eventService.update(dto);
   }
 
   @Auth('ADMIN')
   @Delete(':id')
-  async deleteEvent(@Param('id') id: string) {
-    return this.eventService.delete(id);
+  async deleteEvent(@Param('id') eventId: string) {
+    return this.eventService.delete(eventId);
   }
 }

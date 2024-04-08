@@ -87,7 +87,7 @@ export class EventService {
 
   async update(dto: UpdateEventDto) {
     const {
-      id,
+      eventId,
       title,
       description,
       imageUrl,
@@ -99,7 +99,7 @@ export class EventService {
 
     return this.prisma.event.update({
       where: {
-        id,
+        eventId,
       },
       data: {
         title,
@@ -112,10 +112,10 @@ export class EventService {
     });
   }
 
-  async delete(id: string) {
+  async delete(eventId: string) {
     return this.prisma.event.delete({
       where: {
-        id,
+        eventId,
       },
     });
   }

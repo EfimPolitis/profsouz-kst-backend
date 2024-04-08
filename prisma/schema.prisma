@@ -9,7 +9,7 @@ datasource db {
 }
 
 model User {
-  id         String    @id @default(uuid()) @map("user_id")
+  userId     String    @id @default(uuid()) @map("user_id")
   email      String    @map("email")
   firstName  String    @map("first_name")
   lastName   String    @map("last_name")
@@ -21,14 +21,14 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("update_at")
 
-  booking   Booking[]
+  booking   ReservationList[]
   comment   Comment[]
-  sender    Message[] @relation("sender")
-  recipient Message[] @relation("recipient")
+  sender    Feedback[]        @relation("sender")
+  recipient Feedback[]        @relation("recipient")
 }
 
 model Event {
-  id           String   @id @default(uuid())
+  eventId      String   @id @default(uuid())
   title        String   @unique
   description  String
   imageUrl     String   @map("image_url")
@@ -40,18 +40,18 @@ model Event {
 
   category CategoriesList[]
 
-  booking Booking[]
+  booking ReservationList[]
 }
 
-model Booking {
-  id           String   @id @default(uuid())
-  ticketsCount Int      @map("tickets_count")
-  createdAt    DateTime @default(now()) @map("created_at")
+model ReservationList {
+  reservationId String   @id @default(uuid())
+  ticketsCount  Int      @map("tickets_count")
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [userId])
   userId String
 
-  event   Event  @relation(fields: [eventId], references: [id])
+  event   Event  @relation(fields: [eventId], references: [eventId])
   eventId String
 }
 
@@ -60,19 +60,19 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
 
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [userId])
   userId String
 }
 
-model Message {
+model Feedback {
   id        String   @id @default(uuid())
   content   String
   createdAt DateTime @default(now())
 
-  sender   User   @relation(name: "sender", fields: [senderId], references: [id])
+  sender   User   @relation(name: "sender", fields: [senderId], references: [userId])
   senderId String @map("sender_id")
 
-  recipient   User   @relation(name: "recipient", fields: [recipientId], references: [id])
+  recipient   User   @relation(name: "recipient", fields: [recipientId], references: [userId])
   recipientId String @map("recipient_id")
 }
 
@@ -87,7 +87,7 @@ model CategoriesList {
   id String @id @default(uuid())
 
   eventId String @map("event_id")
-  event   Event  @relation(fields: [eventId], references: [id])
+  event   Event  @relation(fields: [eventId], references: [eventId])
 
   categoryId String     @map("category_id")
   category   Categories @relation(fields: [categoryId], references: [id])

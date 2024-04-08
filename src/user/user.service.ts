@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { hash } from 'argon2';
 
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Prisma } from '@prisma/client';
+import { hash } from 'argon2';
 
 @Injectable()
 export class UserService {
@@ -17,7 +17,7 @@ export class UserService {
         lastName: true,
         middleName: true,
         email: true,
-        id: true,
+        userId: true,
         role: true,
         createdAt: true,
         password: false,
@@ -42,17 +42,17 @@ export class UserService {
     return users;
   }
 
-  async getProfile(id: string) {
-    const profile = await this.getById(id);
+  async getProfile(userId: string) {
+    const profile = await this.getById(userId);
     const { password, ...rest } = profile;
 
     return rest;
   }
 
-  async getById(id: string) {
+  async getById(userId: string) {
     return this.prisma.user.findUnique({
       where: {
-        id,
+        userId,
       },
     });
   }
@@ -76,16 +76,16 @@ export class UserService {
         lastName,
         middleName,
         email,
-        password,
+        password: await hash(password),
         role,
       },
     });
   }
 
-  async delete(id: string) {
+  async delete(userId: string) {
     return this.prisma.user.delete({
       where: {
-        id,
+        userId,
       },
     });
   }

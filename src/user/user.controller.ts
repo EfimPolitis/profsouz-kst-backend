@@ -17,14 +17,13 @@ export class UserController {
 
   @Auth('')
   @Get('profile')
-  async getProfile(@CurrentUser('id') UserID: string) {
-    return this.userService.getProfile(UserID);
+  async getProfile(@CurrentUser('userId') userId: string) {
+    return this.userService.getProfile(userId);
   }
 
   @Auth('ADMIN')
-  @Get('?')
+  @Get()
   async search(@Query() dto: string) {
-    console.log(dto);
     return this.userService.searchUser(dto);
   }
 
@@ -36,7 +35,7 @@ export class UserController {
 
   @Auth('ADMIN')
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.userService.delete(id);
+  async delete(@Param('id') userId: string) {
+    return this.userService.delete(userId);
   }
 }

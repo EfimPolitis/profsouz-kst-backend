@@ -30,11 +30,13 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: AuthDto, @Res({ passthrough: true }) res: Response) {
     const { refreshToken, ...response } = await this.authService.login(dto);
+
     this.authService.addRefreshTokenToResponse(res, refreshToken);
 
     return response;
   }
 
+  @Auth('ADMIN')
   @UsePipes(new ValidationPipe())
   @HttpCode(200)
   @Post('register')
@@ -43,15 +45,17 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { refreshToken, ...response } = await this.authService.register(dto);
-    this.authService.addRefreshTokenToResponse(res, refreshToken);
+    // this.authService.addRefreshTokenToResponse(res, refreshToken);
 
-    return response;
+    // return response;
+    return true;
   }
 
   @HttpCode(200)
   @Get('access-token')
   async getUser(@Req() req: Request) {
     const accessToken = req.headers.authorization.split(' ')[1];
+
     const { role, ...user } = await this.authService.getByToken(accessToken);
 
     return { role };

@@ -7,26 +7,26 @@ export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAll() {
-    return this.prisma.categories.findMany();
+    return this.prisma.category.findMany();
   }
 
   async create(dto: CreateCategoryDto) {
     const { name } = dto;
-    return this.prisma.categories.create({
+    return this.prisma.category.create({
       data: { name },
     });
   }
 
   async update(id: string, dto: CreateCategoryDto) {
     const { name } = dto;
-    return this.prisma.categories.update({
+    return this.prisma.category.update({
       where: { id },
       data: { name },
     });
   }
 
   async delete(id: string) {
-    return this.prisma.categories.delete({
+    return this.prisma.category.delete({
       where: { id },
     });
   }

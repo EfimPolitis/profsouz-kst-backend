@@ -4,6 +4,6 @@ export class CreateEventDto {
   imageUrl: string;
   link?: string;
   date: string;
-  categoriesId: string[];
+  categoryId: string[];
   totalTickets?: number;
 }

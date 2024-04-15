@@ -59,6 +59,13 @@ export class EventService {
     return this.prisma.event.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
+      include: {
+        categories: {
+          select: {
+            category: true,
+          },
+        },
+      },
     });
   }
 
@@ -69,9 +76,21 @@ export class EventService {
       imageUrl,
       link,
       date,
-      categoriesId,
+      categoryId,
       totalTickets,
     } = dto;
+
+    const categories = [];
+
+    for (let i = 0; i <= categoryId.length - 1; i++) {
+      categories.push({
+        category: {
+          connect: {
+            id: categoryId[i],
+          },
+        },
+      });
+    }
 
     return this.prisma.event.create({
       data: {
@@ -81,6 +100,9 @@ export class EventService {
         link,
         date,
         totalTickets,
+        categories: {
+          create: categories,
+        },
       },
     });
   }
@@ -93,7 +115,7 @@ export class EventService {
       imageUrl,
       link,
       date,
-      categoriesId,
+      categoryId,
       totalTickets,
     } = dto;
 

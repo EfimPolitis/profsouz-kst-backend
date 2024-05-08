@@ -16,30 +16,20 @@ export class EventService {
   async getAll(dto: getAllEventsDto) {
     const { search, sort, type } = dto;
 
-    const prismaSort: Prisma.EventOrderByWithAggregationInput[] = [];
+    const prismaSort: Prisma.EventsOrderByWithAggregationInput[] = [];
 
     if (sort === EnumEventSort.ALPHABETIC && type === EnumSortType.ASK)
       prismaSort.push({ title: 'asc' });
     else if (sort === EnumEventSort.ALPHABETIC && type === EnumSortType.DESC)
       prismaSort.push({ title: 'desc' });
-    // else if (sort === EnumEventSort.CATEGORY && type === EnumSortType.DESC)
-    //   prismaSort.push({ title: 'desc'})
-    // else if (sort === EnumEventSort.CATEGORY && type === EnumSortType.DESC)
-    //   prismaSort.push({ title: 'desc'})
     else if (sort === EnumEventSort.DATE && type === EnumSortType.ASK)
       prismaSort.push({ date: 'asc' });
     else if (sort === EnumEventSort.DATE && type === EnumSortType.DESC)
       prismaSort.push({ date: 'desc' });
 
-    const prismaSearch: Prisma.EventWhereInput = search
+    const prismaSearch: Prisma.EventsWhereInput = search
       ? {
           OR: [
-            // {
-            //   category: {
-            //     contains: search,
-            //     mode: 'insensitive',
-            //   },
-            // },
             {
               title: {
                 contains: search,
@@ -52,11 +42,23 @@ export class EventService {
                 mode: 'insensitive',
               },
             },
+            {
+              categories: {
+                some: {
+                  category: {
+                    name: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+            },
           ],
         }
       : {};
 
-    return this.prisma.event.findMany({
+    return this.prisma.events.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
       include: {
@@ -73,26 +75,27 @@ export class EventService {
     const {
       title,
       description,
-      imageUrl,
       link,
       date,
-      categoryId,
+      imageUrl,
+      categoriesId,
       totalTickets,
     } = dto;
 
     const categories = [];
+    console.log(dto);
 
-    for (let i = 0; i <= categoryId.length - 1; i++) {
+    for (let i = 0; i <= categoriesId.length - 1; i++) {
       categories.push({
         category: {
           connect: {
-            id: categoryId[i],
+            id: categoriesId[i],
           },
         },
       });
     }
 
-    return this.prisma.event.create({
+    return this.prisma.events.create({
       data: {
         title,
         description,
@@ -107,19 +110,18 @@ export class EventService {
     });
   }
 
-  async update(dto: UpdateEventDto) {
+  async update(dto: UpdateEventDto, eventId: string) {
     const {
-      eventId,
       title,
       description,
-      imageUrl,
       link,
       date,
-      categoryId,
+      imageUrl,
+      categoriesId,
       totalTickets,
     } = dto;
 
-    return this.prisma.event.update({
+    return this.prisma.events.update({
       where: {
         eventId,
       },
@@ -135,7 +137,7 @@ export class EventService {
   }
 
   async delete(eventId: string) {
-    return this.prisma.event.delete({
+    return this.prisma.events.delete({
       where: {
         eventId,
       },

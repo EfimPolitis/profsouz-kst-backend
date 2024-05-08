@@ -32,8 +32,11 @@ export class EventController {
 
   @Auth('ADMIN')
   @Patch(':id')
-  async updateEvent(@Body() dto: UpdateEventDto) {
-    return this.eventService.update(dto);
+  async updateEvent(
+    @Body() dto: UpdateEventDto,
+    @Param('eventId') eventId: string,
+  ) {
+    return this.eventService.update(dto, eventId);
   }
 
   @Auth('ADMIN')

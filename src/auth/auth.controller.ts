@@ -37,7 +37,7 @@ export class AuthController {
   }
 
   // @Auth('ADMIN')
-  @UsePipes(new ValidationPipe())
+  // @UsePipes(new ValidationPipe())
   @HttpCode(200)
   @Post('register')
   async register(
@@ -45,9 +45,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { refreshToken, ...response } = await this.authService.register(dto);
-    // this.authService.addRefreshTokenToResponse(res, refreshToken);
 
-    // return response;
     return true;
   }
 

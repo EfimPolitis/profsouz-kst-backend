@@ -4,42 +4,65 @@ import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Prisma } from '@prisma/client';
 import { hash } from 'argon2';
+import {
+  EnumSortType,
+  EnumUserSort,
+  getAllUsersDto,
+} from './dto/get-all.user.dto';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async getUsers() {
-    return this.prisma.user.findMany({
-      select: {
-        userName: true,
-        firstName: true,
-        lastName: true,
-        middleName: true,
-        email: true,
-        userId: true,
-        role: true,
-        createdAt: true,
-        password: false,
-      },
-    });
-  }
+  async getAll(dto: getAllUsersDto) {
+    const { search, sort, type } = dto;
 
-  async searchUser(dto) {
-    const prismaSearch: Prisma.UserWhereInput = dto.search
+    const prismaSort: Prisma.UserOrderByWithAggregationInput[] = [];
+
+    if (sort === EnumUserSort.ALPHABETIC && type === EnumSortType.ASK)
+      prismaSort.push({ role: 'asc' });
+    else if (sort === EnumUserSort.ALPHABETIC && type === EnumSortType.DESC)
+      prismaSort.push({ role: 'desc' });
+    else if (sort === EnumUserSort.DATE && type === EnumSortType.ASK)
+      prismaSort.push({ createdAt: 'asc' });
+    else if (sort === EnumUserSort.DATE && type === EnumSortType.DESC)
+      prismaSort.push({ createdAt: 'desc' });
+
+    const prismaSearch: Prisma.UserWhereInput = search
       ? {
-          userName: {
-            contains: dto.search,
-            mode: 'insensitive',
-          },
+          OR: [
+            {
+              userName: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              lastName: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              firstName: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              middleName: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
         }
       : {};
 
-    const users = this.prisma.user.findMany({
+    return this.prisma.user.findMany({
       where: prismaSearch,
+      orderBy: prismaSort,
     });
-
-    return users;
   }
 
   async getProfile(userId: string) {
@@ -79,6 +102,15 @@ export class UserService {
         password: await hash(password),
         role,
       },
+    });
+  }
+
+  async update(dto: CreateUserDto, id: string) {
+    return this.prisma.user.update({
+      where: {
+        userId: id,
+      },
+      data: dto,
     });
   }
 

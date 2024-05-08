@@ -14,7 +14,7 @@ export class ReservationController {
 
   @Auth('USER')
   @Get(':userId')
-  async getYourReservations(@Param('userId') userId: string) {
+  async getReservationsByUserId(@Param('userId') userId: string) {
     return this.reservationService.getByUserId(userId);
   }
 

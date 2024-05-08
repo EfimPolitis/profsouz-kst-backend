@@ -10,7 +10,7 @@ export class ReservationService {
     return this.prisma.reservationList.findMany({
       select: {
         id: true,
-        event: true,
+        events: true,
         user: true,
         ticketsCount: true,
         createdAt: true,
@@ -24,7 +24,20 @@ export class ReservationService {
         userId,
       },
       select: {
-        event: true,
+        id: false,
+        user: false,
+        userId: false,
+        eventId: false,
+        ticketsCount: true,
+        events: {
+          include: {
+            categories: {
+              select: {
+                category: true,
+              },
+            },
+          },
+        },
       },
     });
   }

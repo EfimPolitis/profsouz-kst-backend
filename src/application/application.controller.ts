@@ -1,8 +1,17 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { ReservationService } from 'src/reservation/reservation.service';
+import { getAllApplicationsDto } from './dto/get-all-application.dto';
 
 @Controller('application')
 export class ApplicationController {
@@ -13,8 +22,8 @@ export class ApplicationController {
 
   @Auth('ADMIN')
   @Get()
-  async getAllApplication() {
-    return this.applicationService.getAll();
+  async getAllApplication(@Query() dto: getAllApplicationsDto) {
+    return this.applicationService.getAll(dto);
   }
 
   @Auth('USER')
@@ -37,7 +46,7 @@ export class ApplicationController {
       this.reservationService.create(application);
     }
 
-    this.applicationService.delete(id);
+    this.applicationService.update(dto.status, id);
 
     return true;
   }

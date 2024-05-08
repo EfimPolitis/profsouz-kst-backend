@@ -1,5 +1,3 @@
 import { CreateEventDto } from './create-event.dto';
 
-export class UpdateEventDto extends CreateEventDto {
-  eventId: string;
-}
+export class UpdateEventDto extends CreateEventDto {}

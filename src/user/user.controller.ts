@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Param,
+  Patch,
   Query,
   Req,
   Res,
@@ -10,6 +12,8 @@ import {
 import { UserService } from './user.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
+import { getAllUsersDto } from './dto/get-all.user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('users')
 export class UserController {
@@ -23,14 +27,14 @@ export class UserController {
 
   @Auth('ADMIN')
   @Get()
-  async search(@Query() dto: string) {
-    return this.userService.searchUser(dto);
+  async getUsers(@Query() dto: getAllUsersDto) {
+    return this.userService.getAll(dto);
   }
 
-  @Auth('ADMIN')
-  @Get()
-  async getList() {
-    return this.userService.getUsers();
+  @Auth('')
+  @Patch(':id')
+  async updateUser(@Body() dto: CreateUserDto, @Param('id') id: string) {
+    return this.userService.update(dto, id);
   }
 
   @Auth('ADMIN')

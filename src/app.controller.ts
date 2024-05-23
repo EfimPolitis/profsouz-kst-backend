@@ -7,10 +7,13 @@ import {
 import { Auth } from './auth/decorators/auth.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { PrismaService } from './prisma.service';
 
 @Controller('upload')
 export class AppController {
-  @Auth('')
+  constructor(private prisma: PrismaService) {}
+
+  @Auth('MODER')
   @Post()
   @UseInterceptors(
     FileInterceptor('image', {
@@ -23,14 +26,33 @@ export class AppController {
     }),
   )
   async uploadFile(@UploadedFile() image: Express.Multer.File) {
-    const response = {
-      message: 'File uploaded successfully!',
-      data: {
-        originalname: image.originalname,
-        filename: image.filename,
-        url: `/public/uploads/${image.filename}`,
+    const oldImage = await this.prisma.image.findUnique({
+      where: {
+        url: `http://localhost:5284/public/uploads/${image.filename}`,
       },
+    });
+
+    if (oldImage === null) {
+      const data = await this.prisma.image.create({
+        data: {
+          url: `http://localhost:5284/public/uploads/${image.filename}`,
+          name: image.filename,
+        },
+      });
+
+      const response = {
+        id: data.id,
+        url: data.url,
+      };
+
+      return response;
+    }
+
+    const response = {
+      id: oldImage.id,
+      url: oldImage.url,
     };
+
     return response;
   }
 }

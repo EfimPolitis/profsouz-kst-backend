@@ -15,7 +15,7 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   async getAll(dto: getAllUsersDto) {
-    const { search, sort, type } = dto;
+    const { search, sort, type, page } = dto;
 
     const prismaSort: Prisma.UserOrderByWithAggregationInput[] = [];
 
@@ -59,10 +59,25 @@ export class UserService {
         }
       : {};
 
-    return this.prisma.user.findMany({
+    const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
+    const data = await this.prisma.user.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
     });
+    const countPage =
+      Math.ceil(data.length / 12) > 1 ? Math.ceil(data.length / 12) : 0;
+
+    const items = await this.prisma.user.findMany({
+      where: prismaSearch,
+      orderBy: prismaSort,
+      skip,
+      take: 12,
+    });
+
+    return {
+      items,
+      countPage,
+    };
   }
 
   async getProfile(userId: string) {

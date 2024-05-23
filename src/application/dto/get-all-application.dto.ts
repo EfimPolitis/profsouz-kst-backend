@@ -12,6 +12,8 @@ export enum EnumSortType {
 }
 
 export class getAllApplicationsDto {
+  page: string;
+
   @IsOptional()
   @IsEnum(EnumApplicationSort)
   sort?: EnumApplicationSort;

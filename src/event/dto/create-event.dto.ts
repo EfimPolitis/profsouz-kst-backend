@@ -1,9 +1,10 @@
 export class CreateEventDto {
   title: string;
   description: string;
+  organizer: string;
   link?: string;
-  date: string;
-  imageUrl: string;
+  eventDate: string;
+  imagesId: string[];
   categoriesId: string[];
   totalTickets?: number;
 }

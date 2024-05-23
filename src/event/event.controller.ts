@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -18,28 +19,30 @@ import { getAllEventsDto } from './dto/get-all.event.dto';
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
-  @Auth('')
   @Get()
   async getEvents(@Query() dto: getAllEventsDto) {
     return this.eventService.getAll(dto);
   }
 
-  @Auth('ADMIN')
+  @Get(':id')
+  async getEventsById(@Param('id') id: string) {
+    if (!id) throw new BadRequestException('Bad request');
+    return this.eventService.getById(id);
+  }
+
+  @Auth('MODER')
   @Post()
   async createEvent(@Body() dto: CreateEventDto) {
     return this.eventService.create(dto);
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Patch(':id')
-  async updateEvent(
-    @Body() dto: UpdateEventDto,
-    @Param('eventId') eventId: string,
-  ) {
+  async updateEvent(@Body() dto: UpdateEventDto, @Param('id') eventId: string) {
     return this.eventService.update(dto, eventId);
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Delete(':id')
   async deleteEvent(@Param('id') eventId: string) {
     return this.eventService.delete(eventId);

@@ -11,6 +11,7 @@ import { ReservationModule } from './reservation/reservation.module';
 import { AppController } from './app.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { PrismaService } from './prisma.service';
 
 @Module({
   controllers: [AppController],
@@ -28,5 +29,6 @@ import { join } from 'path';
       rootPath: join(__dirname, '..'),
     }),
   ],
+  providers: [PrismaService],
 })
 export class AppModule {}

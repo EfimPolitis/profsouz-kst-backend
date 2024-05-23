@@ -1,9 +1,8 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 
-export enum EnumEventSort {
+export enum EnumReservationSort {
   ALPHABETIC = 'alphabetic',
   DATE = 'date',
-  CATEGORY = 'category',
 }
 
 export enum EnumSortType {
@@ -11,12 +10,12 @@ export enum EnumSortType {
   DESC = 'desc',
 }
 
-export class getAllEventsDto {
+export class getAllReservationDto {
   page: string;
 
   @IsOptional()
-  @IsEnum(EnumEventSort)
-  sort?: EnumEventSort;
+  @IsEnum(EnumReservationSort)
+  sort?: EnumReservationSort;
 
   @IsOptional()
   @IsString()

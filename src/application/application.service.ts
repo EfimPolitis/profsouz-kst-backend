@@ -13,7 +13,7 @@ export class ApplicationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAll(dto: getAllApplicationsDto) {
-    const { search, sort, type } = dto;
+    const { search, sort, type, page } = dto;
 
     const prismaSort: Prisma.ApplicationOrderByWithAggregationInput[] = [];
 
@@ -68,7 +68,15 @@ export class ApplicationService {
         }
       : {};
 
-    return this.prisma.application.findMany({
+    const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
+    const data = await this.prisma.application.findMany({
+      where: prismaSearch,
+      orderBy: prismaSort,
+    });
+    const countPage =
+      Math.ceil(data.length / 12) > 1 ? Math.ceil(data.length / 12) : 0;
+
+    const items = await this.prisma.application.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
       select: {
@@ -80,7 +88,14 @@ export class ApplicationService {
         createdAt: true,
         updatedAt: true,
       },
+      skip,
+      take: 12,
     });
+
+    return {
+      items,
+      countPage,
+    };
   }
 
   async getById(id: string) {
@@ -108,13 +123,16 @@ export class ApplicationService {
 
   async create(dto: CreateApplicationDto) {
     const { userId, eventId, ticketsCount } = dto;
-    return this.prisma.application.create({
+
+    await this.prisma.application.create({
       data: {
         userId,
         eventId,
         ticketsCount,
       },
     });
+
+    return true;
   }
 
   async update(status: EStatus, id: string) {

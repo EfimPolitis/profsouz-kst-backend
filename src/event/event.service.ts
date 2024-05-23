@@ -14,7 +14,7 @@ export class EventService {
   constructor(private prisma: PrismaService) {}
 
   async getAll(dto: getAllEventsDto) {
-    const { search, sort, type } = dto;
+    const { search, sort, type, page } = dto;
 
     const prismaSort: Prisma.EventsOrderByWithAggregationInput[] = [];
 
@@ -23,9 +23,9 @@ export class EventService {
     else if (sort === EnumEventSort.ALPHABETIC && type === EnumSortType.DESC)
       prismaSort.push({ title: 'desc' });
     else if (sort === EnumEventSort.DATE && type === EnumSortType.ASK)
-      prismaSort.push({ date: 'asc' });
+      prismaSort.push({ eventDate: 'asc' });
     else if (sort === EnumEventSort.DATE && type === EnumSortType.DESC)
-      prismaSort.push({ date: 'desc' });
+      prismaSort.push({ eventDate: 'desc' });
 
     const prismaSearch: Prisma.EventsWhereInput = search
       ? {
@@ -58,13 +58,61 @@ export class EventService {
         }
       : {};
 
-    return this.prisma.events.findMany({
+    const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
+    const data = await this.prisma.events.findMany({
+      where: prismaSearch,
+      orderBy: prismaSort,
+    });
+    const countPage =
+      Math.ceil(data.length / 12) > 1 ? Math.ceil(data.length / 12) : 0;
+
+    const items = await this.prisma.events.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
       include: {
         categories: {
           select: {
+            category: {
+              select: {
+                name: true,
+                id: true,
+              },
+            },
+          },
+        },
+        images: {
+          select: {
+            image: {
+              select: {
+                id: true,
+                url: true,
+              },
+            },
+          },
+        },
+      },
+      skip,
+      take: 12,
+    });
+
+    return {
+      items,
+      countPage,
+    };
+  }
+
+  async getById(id: string) {
+    return this.prisma.events.findUnique({
+      where: { eventId: id },
+      include: {
+        categories: {
+          select: {
             category: true,
+          },
+        },
+        images: {
+          select: {
+            image: true,
           },
         },
       },
@@ -75,15 +123,16 @@ export class EventService {
     const {
       title,
       description,
+      organizer,
       link,
-      date,
-      imageUrl,
+      eventDate,
+      imagesId,
       categoriesId,
       totalTickets,
     } = dto;
 
     const categories = [];
-    console.log(dto);
+    const images = [];
 
     for (let i = 0; i <= categoriesId.length - 1; i++) {
       categories.push({
@@ -95,16 +144,29 @@ export class EventService {
       });
     }
 
+    for (let i = 0; i <= imagesId.length - 1; i++) {
+      images.push({
+        image: {
+          connect: {
+            id: imagesId[i],
+          },
+        },
+      });
+    }
+
     return this.prisma.events.create({
       data: {
         title,
         description,
-        imageUrl,
+        organizer,
         link,
-        date,
+        eventDate,
         totalTickets,
         categories: {
           create: categories,
+        },
+        images: {
+          create: images,
         },
       },
     });
@@ -114,12 +176,36 @@ export class EventService {
     const {
       title,
       description,
+      organizer,
       link,
-      date,
-      imageUrl,
+      eventDate,
+      imagesId,
       categoriesId,
       totalTickets,
     } = dto;
+
+    const categories = [];
+    const images = [];
+
+    for (let i = 0; i <= categoriesId.length - 1; i++) {
+      categories.push({
+        category: {
+          connect: {
+            id: categoriesId[i],
+          },
+        },
+      });
+    }
+
+    for (let i = 0; i <= imagesId.length - 1; i++) {
+      images.push({
+        image: {
+          connect: {
+            id: imagesId[i],
+          },
+        },
+      });
+    }
 
     return this.prisma.events.update({
       where: {
@@ -128,10 +214,22 @@ export class EventService {
       data: {
         title,
         description,
-        imageUrl,
+        organizer,
         link,
-        date,
+        eventDate,
         totalTickets,
+        categories: {
+          deleteMany: {
+            eventId,
+          },
+          create: categories,
+        },
+        images: {
+          deleteMany: {
+            eventId,
+          },
+          create: images,
+        },
       },
     });
   }

@@ -21,23 +21,22 @@ export class CategoryController {
     return this.categoryService.getAll();
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Post()
   async createCategory(@Body() dto: CreateCategoryDto) {
     return this.categoryService.create(dto);
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Patch(':id')
   async updateCategory(
     @Param('id') id: string,
     @Body() dto: CreateCategoryDto,
   ) {
-    console.log(id, dto);
     return this.categoryService.update(id, dto);
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Delete(':id')
   async deleteCategroy(@Param('id') id: string) {
     return this.categoryService.delete(id);

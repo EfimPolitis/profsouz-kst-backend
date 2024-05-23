@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   HttpCode,
-  Param,
   Post,
   Req,
   Res,
@@ -36,8 +35,8 @@ export class AuthController {
     return response;
   }
 
-  // @Auth('ADMIN')
-  // @UsePipes(new ValidationPipe())
+  @Auth('ADMIN')
+  @UsePipes(new ValidationPipe())
   @HttpCode(200)
   @Post('register')
   async register(

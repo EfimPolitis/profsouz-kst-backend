@@ -3,7 +3,6 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 export enum EnumUserSort {
   ALPHABETIC = 'alphabetic',
   DATE = 'date',
-  CATEGORY = 'category',
 }
 
 export enum EnumSortType {
@@ -12,6 +11,8 @@ export enum EnumSortType {
 }
 
 export class getAllUsersDto {
+  page: string;
+
   @IsOptional()
   @IsEnum(EnumUserSort)
   sort?: EnumUserSort;

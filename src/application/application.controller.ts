@@ -20,7 +20,7 @@ export class ApplicationController {
     private readonly reservationService: ReservationService,
   ) {}
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Get()
   async getAllApplication(@Query() dto: getAllApplicationsDto) {
     return this.applicationService.getAll(dto);
@@ -32,13 +32,13 @@ export class ApplicationController {
     return this.applicationService.getByUserId(userId);
   }
 
-  @Auth('USER')
+  @Auth('')
   @Post()
   async createApplication(@Body() dto: CreateApplicationDto) {
     return this.applicationService.create(dto);
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Patch(':id')
   async updateApplication(@Body() dto, @Param('id') id: string) {
     if (dto.status === 'APPROVED') {

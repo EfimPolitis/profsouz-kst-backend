@@ -6,8 +6,6 @@ import {
   Param,
   Patch,
   Query,
-  Req,
-  Res,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
@@ -25,13 +23,13 @@ export class UserController {
     return this.userService.getProfile(userId);
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Get()
   async getUsers(@Query() dto: getAllUsersDto) {
     return this.userService.getAll(dto);
   }
 
-  @Auth('')
+  @Auth('ADMIN')
   @Patch(':id')
   async updateUser(@Body() dto: CreateUserDto, @Param('id') id: string) {
     return this.userService.update(dto, id);

@@ -1,15 +1,16 @@
-import { Controller, Delete, Get, Param } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Query } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { getAllReservationDto } from './dto/get-all-reservations.dto';
 
 @Controller('reservation')
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Get()
-  async getReservations() {
-    return this.reservationService.getAll();
+  async getReservations(@Query() dto: getAllReservationDto) {
+    return this.reservationService.getAll(dto);
   }
 
   @Auth('USER')
@@ -18,7 +19,7 @@ export class ReservationController {
     return this.reservationService.getByUserId(userId);
   }
 
-  @Auth('ADMIN')
+  @Auth('MODER')
   @Delete(':id')
   async deleteReservation(@Param('id') id: string) {
     return this.reservationService.delete(id);

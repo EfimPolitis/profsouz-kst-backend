@@ -4,7 +4,8 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { EStatus, Prisma } from '@prisma/client';
 import {
   EnumApplicationSort,
-  EnumSortType,
+  EnumApplicationStatus,
+  EnumSortOrder,
   getAllApplicationsDto,
 } from './dto/get-all-application.dto';
 
@@ -13,71 +14,44 @@ export class ApplicationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAll(dto: getAllApplicationsDto) {
-    const { search, sort, type, page } = dto;
+    const {
+      search,
+      sort,
+      order,
+      page,
+      created_at_start,
+      created_at_end,
+      updated_at_start,
+      updated_at_end,
+      status,
+    } = dto;
 
-    const prismaSort: Prisma.ApplicationOrderByWithAggregationInput[] = [];
+    const { prismaSort } = this._getSort(sort, order);
+    const { prismaSearch } = this._getSearch(search);
+    const { prismaFilter } = this._getFilter(
+      created_at_start,
+      created_at_end,
+      updated_at_start,
+      updated_at_end,
+      status,
+    );
 
-    if (sort === EnumApplicationSort.ALPHABETIC && type === EnumSortType.ASK)
-      prismaSort.push({ status: 'asc' });
-    else if (
-      sort === EnumApplicationSort.ALPHABETIC &&
-      type === EnumSortType.DESC
-    )
-      prismaSort.push({ status: 'desc' });
-    else if (sort === EnumApplicationSort.DATE && type === EnumSortType.ASK)
-      prismaSort.push({ createdAt: 'asc' });
-    else if (sort === EnumApplicationSort.DATE && type === EnumSortType.DESC)
-      prismaSort.push({ createdAt: 'desc' });
+    const skip = Number(page) > 1 ? (Number(page) - 1) * 10 : 0;
 
-    const prismaSearch: Prisma.ApplicationWhereInput = search
-      ? {
-          OR: [
-            {
-              user: {
-                OR: [
-                  {
-                    firstName: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                  {
-                    lastName: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                  {
-                    middleName: {
-                      contains: search,
-                      mode: 'insensitive',
-                    },
-                  },
-                ],
-              },
-            },
-            {
-              events: {
-                title: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-            },
-          ],
-        }
-      : {};
-
-    const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
-    const data = await this.prisma.application.findMany({
-      where: prismaSearch,
-      orderBy: prismaSort,
+    const countApplications = await this.prisma.application.count({
+      where: {
+        AND: [prismaSearch, prismaFilter],
+      },
     });
     const countPage =
-      Math.ceil(data.length / 12) > 1 ? Math.ceil(data.length / 12) : 0;
+      Math.ceil(countApplications / 10) > 1
+        ? Math.ceil(countApplications / 10)
+        : 0;
 
-    const items = await this.prisma.application.findMany({
-      where: prismaSearch,
+    const data = await this.prisma.application.findMany({
+      where: {
+        AND: [prismaSearch, prismaFilter],
+      },
       orderBy: prismaSort,
       select: {
         id: true,
@@ -89,11 +63,11 @@ export class ApplicationService {
         updatedAt: true,
       },
       skip,
-      take: 12,
+      take: 10,
     });
 
     return {
-      items,
+      items: data,
       countPage,
     };
   }
@@ -152,5 +126,109 @@ export class ApplicationService {
         id,
       },
     });
+  }
+
+  private _getSort(sort: EnumApplicationSort, order: EnumSortOrder) {
+    const prismaSort: Prisma.ApplicationOrderByWithAggregationInput[] = [];
+
+    if (sort === EnumApplicationSort.ALPHABETIC && order === EnumSortOrder.ASK)
+      prismaSort.push({ status: 'asc' });
+    else if (
+      sort === EnumApplicationSort.ALPHABETIC &&
+      order === EnumSortOrder.DESC
+    )
+      prismaSort.push({ status: 'desc' });
+    else if (
+      sort === EnumApplicationSort.CREATED_AT &&
+      order === EnumSortOrder.ASK
+    )
+      prismaSort.push({ createdAt: 'asc' });
+    else if (
+      sort === EnumApplicationSort.CREATED_AT &&
+      order === EnumSortOrder.DESC
+    )
+      prismaSort.push({ createdAt: 'desc' });
+
+    return { prismaSort };
+  }
+
+  private _getSearch(search: string) {
+    const prismaSearch: Prisma.ApplicationWhereInput = search
+      ? {
+          OR: [
+            {
+              user: {
+                OR: [
+                  {
+                    firstName: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    lastName: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                  {
+                    middleName: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              events: {
+                title: {
+                  contains: search,
+                  mode: 'insensitive',
+                },
+              },
+            },
+          ],
+        }
+      : {};
+
+    return { prismaSearch };
+  }
+
+  private _getFilter(
+    created_at_start: string,
+    created_at_end: string,
+    updated_at_start: string,
+    updated_at_end: string,
+    status: EnumApplicationStatus,
+  ) {
+    const prismaFilter: Prisma.ApplicationWhereInput = {};
+
+    if (created_at_start) {
+      prismaFilter.createdAt = {
+        gte: new Date(created_at_start),
+      };
+    }
+    if (created_at_end) {
+      prismaFilter.createdAt = {
+        lte: new Date(created_at_end),
+      };
+    }
+    if (updated_at_start) {
+      prismaFilter.updatedAt = {
+        gte: new Date(updated_at_start),
+      };
+    }
+    if (updated_at_end) {
+      prismaFilter.updatedAt = {
+        lte: new Date(updated_at_end),
+      };
+    }
+
+    if (status) {
+      prismaFilter.status = EnumApplicationStatus[status.toUpperCase()];
+    }
+
+    return { prismaFilter };
   }
 }

@@ -1,17 +1,23 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsDateString, IsString } from 'class-validator';
 
 export enum EnumEventSort {
   ALPHABETIC = 'alphabetic',
+  TICKETS = 'tickets',
   DATE = 'date',
-  CATEGORY = 'category',
 }
 
-export enum EnumSortType {
+export enum EnumSortOrder {
   ASK = 'asc',
   DESC = 'desc',
 }
 
+export enum EnumEventType {
+  LINK = 'link',
+  TICKET = 'ticket',
+}
+
 export class getAllEventsDto {
+  @IsString()
   page: string;
 
   @IsOptional()
@@ -23,6 +29,18 @@ export class getAllEventsDto {
   search?: string;
 
   @IsOptional()
-  @IsEnum(EnumSortType)
-  type?: EnumSortType;
+  @IsEnum(EnumSortOrder)
+  order?: EnumSortOrder;
+
+  @IsOptional()
+  @IsDateString()
+  date_start: string;
+
+  @IsOptional()
+  @IsDateString()
+  date_end: string;
+
+  @IsOptional()
+  @IsEnum(EnumEventType)
+  type: EnumEventType;
 }

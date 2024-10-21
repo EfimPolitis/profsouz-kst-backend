@@ -4,14 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { EventModule } from './event/event.module';
 import { ApplicationModule } from './application/application.module';
-import { CommentModule } from './comment/comment.module';
-import { ReportModule } from './feedback/report.module';
 import { CategoryModule } from './category/category.module';
 import { ReservationModule } from './reservation/reservation.module';
 import { AppController } from './app.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { PrismaService } from './prisma.service';
+import { NewsModule } from './news/news.module';
 
 @Module({
   controllers: [AppController],
@@ -21,13 +20,12 @@ import { PrismaService } from './prisma.service';
     UserModule,
     EventModule,
     ApplicationModule,
-    CommentModule,
-    ReportModule,
     CategoryModule,
     ReservationModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..'),
     }),
+    NewsModule,
   ],
   providers: [PrismaService],
 })

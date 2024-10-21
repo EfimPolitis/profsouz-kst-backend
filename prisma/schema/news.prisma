@@ -1,0 +1,9 @@
+model News {
+  id          String @id @default(uuid())
+  title       String @unique
+  description String
+  content     String
+  views       Int    @default(0)
+
+  images NewsImage[]
+}

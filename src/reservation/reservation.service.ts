@@ -15,7 +15,7 @@ export class ReservationService {
   async getAll(dto: getAllReservationDto) {
     const { search, sort, type, page } = dto;
 
-    const prismaSort: Prisma.ReservationListOrderByWithAggregationInput[] = [];
+    const prismaSort: Prisma.ReservationOrderByWithAggregationInput[] = [];
 
     // if (sort === EnumReservationSort.ALPHABETIC && type === EnumSortType.ASK)
     //   prismaSort.push({ status: 'asc' });
@@ -29,12 +29,18 @@ export class ReservationService {
     // else if (sort === EnumReservationSort.DATE && type === EnumSortType.DESC)
     //   prismaSort.push({ createdAt: 'desc' });
 
-    const prismaSearch: Prisma.ReservationListWhereInput = search
+    const prismaSearch: Prisma.ReservationWhereInput = search
       ? {
           OR: [
             {
               user: {
                 OR: [
+                  {
+                    userName: {
+                      contains: search,
+                      mode: 'insensitive',
+                    },
+                  },
                   {
                     firstName: {
                       contains: search,
@@ -68,15 +74,15 @@ export class ReservationService {
         }
       : {};
 
-    const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
-    const data = await this.prisma.reservationList.findMany({
+    const skip = Number(page) > 1 ? (Number(page) - 1) * 10 : 0;
+    const data = await this.prisma.reservation.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
     });
     const countPage =
-      Math.ceil(data.length / 12) > 1 ? Math.ceil(data.length / 12) : 0;
+      Math.ceil(data.length / 10) > 1 ? Math.ceil(data.length / 10) : 0;
 
-    const items = await this.prisma.reservationList.findMany({
+    const items = await this.prisma.reservation.findMany({
       where: prismaSearch,
       select: {
         id: true,
@@ -86,7 +92,7 @@ export class ReservationService {
         createdAt: true,
       },
       skip,
-      take: 12,
+      take: 10,
     });
 
     return {
@@ -96,33 +102,60 @@ export class ReservationService {
   }
 
   async getByUserId(userId: string) {
-    return this.prisma.reservationList.findMany({
+    const rawReservations = await this.prisma.reservation.findMany({
       where: {
         userId,
       },
       select: {
-        id: false,
-        user: false,
-        userId: false,
-        eventId: false,
         ticketsCount: true,
         events: {
           include: {
             categories: {
               select: {
-                category: true,
+                category: {
+                  select: {
+                    name: true,
+                    id: true,
+                  },
+                },
+              },
+            },
+            images: {
+              select: {
+                image: {
+                  select: {
+                    id: true,
+                    url: true,
+                  },
+                },
               },
             },
           },
         },
       },
     });
+
+    const reservations = rawReservations.map((reservation) => {
+      const event = reservation.events;
+      const categories = event.categories.map(({ category }) => category);
+      const images = event.images.map(({ image }) => image);
+      return {
+        ticketsCount: reservation.ticketsCount,
+        event: {
+          ...event,
+          categories,
+          images,
+        },
+      };
+    });
+
+    return reservations;
   }
 
   async create(dto: CreateReservationDto) {
     const { userId, eventId, ticketsCount } = dto;
 
-    let { totalTickets } = await this.prisma.events.findUnique({
+    let { totalTickets } = await this.prisma.event.findUnique({
       where: {
         eventId,
       },
@@ -133,14 +166,14 @@ export class ReservationService {
 
     totalTickets -= ticketsCount;
 
-    await this.prisma.events.update({
+    await this.prisma.event.update({
       where: { eventId },
       data: {
         totalTickets,
       },
     });
 
-    await this.prisma.reservationList.create({
+    await this.prisma.reservation.create({
       data: {
         userId,
         eventId,
@@ -152,7 +185,7 @@ export class ReservationService {
   }
 
   async delete(id: string) {
-    return this.prisma.reservationList.delete({
+    return this.prisma.reservation.delete({
       where: {
         id,
       },

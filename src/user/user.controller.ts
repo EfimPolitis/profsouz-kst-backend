@@ -11,7 +11,7 @@ import { UserService } from './user.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { getAllUsersDto } from './dto/get-all.user.dto';
-import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UserController {
@@ -23,6 +23,12 @@ export class UserController {
     return this.userService.getProfile(userId);
   }
 
+  @Auth('ADMIN')
+  @Get(':id')
+  async getUser(@Param('id') id: string) {
+    return this.userService.getById(id);
+  }
+
   @Auth('MODER')
   @Get()
   async getUsers(@Query() dto: getAllUsersDto) {
@@ -31,7 +37,7 @@ export class UserController {
 
   @Auth('ADMIN')
   @Patch(':id')
-  async updateUser(@Body() dto: CreateUserDto, @Param('id') id: string) {
+  async updateUser(@Body() dto: UpdateUserDto, @Param('id') id: string) {
     return this.userService.update(dto, id);
   }
 

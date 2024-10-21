@@ -9,6 +9,7 @@ import {
   EnumUserSort,
   getAllUsersDto,
 } from './dto/get-all.user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -59,19 +60,19 @@ export class UserService {
         }
       : {};
 
-    const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
+    const skip = Number(page) > 1 ? (Number(page) - 1) * 10 : 0;
     const data = await this.prisma.user.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
     });
     const countPage =
-      Math.ceil(data.length / 12) > 1 ? Math.ceil(data.length / 12) : 0;
+      Math.ceil(data.length / 10) > 1 ? Math.ceil(data.length / 10) : 0;
 
     const items = await this.prisma.user.findMany({
       where: prismaSearch,
       orderBy: prismaSort,
       skip,
-      take: 12,
+      take: 10,
     });
 
     return {
@@ -104,28 +105,30 @@ export class UserService {
   }
 
   async create(dto: CreateUserDto) {
-    const { userName, firstName, lastName, middleName, email, password, role } =
-      dto;
+    const { password, ...data } = dto;
 
     return this.prisma.user.create({
       data: {
-        userName,
-        firstName,
-        lastName,
-        middleName,
-        email,
+        ...data,
         password: await hash(password),
-        role,
       },
     });
   }
 
-  async update(dto: CreateUserDto, id: string) {
+  async update(dto: UpdateUserDto, id: string) {
+    const { password, ...data } = dto;
+
     return this.prisma.user.update({
       where: {
         userId: id,
       },
-      data: dto,
+      data:
+        password !== ''
+          ? {
+              ...data,
+              password: await hash(password),
+            }
+          : data,
     });
   }
 

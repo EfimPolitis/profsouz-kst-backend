@@ -3,7 +3,7 @@ export class CreateEventDto {
   description: string;
   organizer: string;
   link?: string;
-  eventDate: string;
+  date: string;
   imagesId: string[];
   categoriesId: string[];
   totalTickets?: number;

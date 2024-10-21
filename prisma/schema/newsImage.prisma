@@ -1,0 +1,8 @@
+model NewsImage {
+  newsId  String @map("news_id")
+  imageId String @map("image_id")
+  news    News   @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@id([newsId, imageId])
+}

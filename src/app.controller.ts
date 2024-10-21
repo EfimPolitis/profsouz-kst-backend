@@ -28,14 +28,14 @@ export class AppController {
   async uploadFile(@UploadedFile() image: Express.Multer.File) {
     const oldImage = await this.prisma.image.findUnique({
       where: {
-        url: `http://localhost:5284/public/uploads/${image.filename}`,
+        url: `http://localhost:5000/public/uploads/${image.filename}`,
       },
     });
 
     if (oldImage === null) {
       const data = await this.prisma.image.create({
         data: {
-          url: `http://localhost:5284/public/uploads/${image.filename}`,
+          url: `http://localhost:5000/public/uploads/${image.filename}`,
           name: image.filename,
         },
       });

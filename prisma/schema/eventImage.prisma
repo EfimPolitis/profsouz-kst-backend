@@ -1,0 +1,8 @@
+model EventImage {
+  eventId String @map("event_id")
+  imageId String @map("image_id")
+  event   Event  @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  image   Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, imageId])
+}

@@ -11,17 +11,17 @@ export class CategoryService {
   }
 
   async create(dto: CreateCategoryDto) {
-    const { name, color } = dto;
+    const { name } = dto;
     return this.prisma.category.create({
-      data: { name, color },
+      data: { name },
     });
   }
 
   async update(id: string, dto: CreateCategoryDto) {
-    const { name, color } = dto;
+    const { name } = dto;
     return this.prisma.category.update({
       where: { id },
-      data: { name, color },
+      data: { name },
     });
   }
 

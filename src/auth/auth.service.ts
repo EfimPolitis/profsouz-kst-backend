@@ -88,11 +88,11 @@ export class AuthService {
   private async validateUser(dto: AuthDto) {
     const user = await this.userService.getByUserName(dto.userName);
 
-    if (!user) throw new NotFoundException('Not found user!');
+    if (!user) throw new NotFoundException('Invalid password or user!');
 
     const isValid = await verify(user.password, dto.password);
 
-    if (!isValid) throw new UnauthorizedException('Invalid password!');
+    if (!isValid) throw new NotFoundException('Invalid password or user!');
 
     return user;
   }

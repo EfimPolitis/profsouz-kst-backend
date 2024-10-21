@@ -1,14 +1,22 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export enum EnumApplicationSort {
   ALPHABETIC = 'alphabetic',
-  DATE = 'date',
-  CATEGORY = 'category',
+  STATUS = 'status',
+  TICKETS_COUNT = 'tickets_count',
+  CREATED_AT = 'created_at',
+  UPDATED_AT = 'updated_at',
 }
 
-export enum EnumSortType {
+export enum EnumSortOrder {
   ASK = 'asc',
   DESC = 'desc',
+}
+
+export enum EnumApplicationStatus {
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  PENDING = 'PENDING',
 }
 
 export class getAllApplicationsDto {
@@ -19,10 +27,30 @@ export class getAllApplicationsDto {
   sort?: EnumApplicationSort;
 
   @IsOptional()
-  @IsString()
-  search?: string;
+  @IsEnum(EnumSortOrder)
+  order?: EnumSortOrder;
 
   @IsOptional()
-  @IsEnum(EnumSortType)
-  type?: EnumSortType;
+  @IsEnum(EnumApplicationStatus)
+  status?: EnumApplicationStatus;
+
+  @IsOptional()
+  @IsDateString()
+  created_at_start?: string;
+
+  @IsDateString()
+  @IsOptional()
+  created_at_end?: string;
+
+  @IsDateString()
+  @IsOptional()
+  updated_at_start?: string;
+
+  @IsDateString()
+  @IsOptional()
+  updated_at_end?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

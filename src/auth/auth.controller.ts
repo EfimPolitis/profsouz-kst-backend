@@ -44,7 +44,7 @@ export class AuthController {
   ) {
     const { refreshToken, ...response } = await this.authService.register(dto);
 
-    return true;
+    return HttpCode(200);
   }
 
   @HttpCode(200)

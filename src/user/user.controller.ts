@@ -19,13 +19,13 @@ export class UserController {
 
   @Auth('')
   @Get('profile')
-  async getProfile(@CurrentUser('userId') userId: string) {
+  async getProfile(@CurrentUser('userId') userId: number) {
     return this.userService.getProfile(userId);
   }
 
   @Auth('ADMIN')
   @Get(':id')
-  async getUser(@Param('id') id: string) {
+  async getUser(@Param('id') id: number) {
     return this.userService.getById(id);
   }
 
@@ -37,13 +37,13 @@ export class UserController {
 
   @Auth('ADMIN')
   @Patch(':id')
-  async updateUser(@Body() dto: UpdateUserDto, @Param('id') id: string) {
+  async updateUser(@Body() dto: UpdateUserDto, @Param('id') id: number) {
     return this.userService.update(dto, id);
   }
 
   @Auth('ADMIN')
   @Delete(':id')
-  async delete(@Param('id') userId: string) {
+  async delete(@Param('id') userId: number) {
     return this.userService.delete(userId);
   }
 }

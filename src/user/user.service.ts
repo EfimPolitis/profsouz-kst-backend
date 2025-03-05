@@ -81,14 +81,14 @@ export class UserService {
     };
   }
 
-  async getProfile(userId: string) {
+  async getProfile(userId: number) {
     const profile = await this.getById(userId);
     const { password, ...rest } = profile;
 
     return rest;
   }
 
-  async getById(userId: string) {
+  async getById(userId: number) {
     return this.prisma.user.findUnique({
       where: {
         userId,
@@ -115,7 +115,7 @@ export class UserService {
     });
   }
 
-  async update(dto: UpdateUserDto, id: string) {
+  async update(dto: UpdateUserDto, id: number) {
     const { password, ...data } = dto;
 
     return this.prisma.user.update({
@@ -132,7 +132,7 @@ export class UserService {
     });
   }
 
-  async delete(userId: string) {
+  async delete(userId: number) {
     return this.prisma.user.delete({
       where: {
         userId,

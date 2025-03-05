@@ -1,18 +1,15 @@
 model User {
-  userId     String    @id @unique @default(uuid()) @map("user_id")
-  email      String    @unique @map("email")
-  firstName  String    @map("first_name")
-  lastName   String    @map("last_name")
-  middleName String    @map("middle_name")
-  userName   String?   @unique @map("user_name")
-  password   String    @map("password")
-  role       EUserRole @default(USER) @map("role")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("update_at")
-
+  userId      Int           @id @unique @default(autoincrement()) @map("user_id")
+  email       String        @unique @map("email")
+  firstName   String        @map("first_name")
+  lastName    String        @map("last_name")
+  middleName  String        @map("middle_name")
+  userName    String?       @unique @map("user_name")
+  password    String        @map("password")
+  role        EUserRole     @default(USER) @map("role")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("update_at")
   application Application[]
-  reservation Reservation[]
 }
 
 enum EUserRole {

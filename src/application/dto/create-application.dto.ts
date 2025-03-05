@@ -2,11 +2,11 @@ import { IsNumber, IsString } from 'class-validator';
 
 export class CreateApplicationDto {
   @IsString()
-  userId: string;
+  userId: number;
 
   @IsString()
   eventId: string;
 
   @IsNumber()
-  ticketsCount: number;
+  places: number;
 }

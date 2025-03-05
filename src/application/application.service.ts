@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
-import { EStatus, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   EnumApplicationSort,
-  EnumApplicationStatus,
   EnumSortOrder,
   getAllApplicationsDto,
 } from './dto/get-all-application.dto';
@@ -14,27 +13,11 @@ export class ApplicationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAll(dto: getAllApplicationsDto) {
-    const {
-      search,
-      sort,
-      order,
-      page,
-      created_at_start,
-      created_at_end,
-      updated_at_start,
-      updated_at_end,
-      status,
-    } = dto;
+    const { search, sort, order, page, created_at_start, created_at_end } = dto;
 
     const { prismaSort } = this._getSort(sort, order);
     const { prismaSearch } = this._getSearch(search);
-    const { prismaFilter } = this._getFilter(
-      created_at_start,
-      created_at_end,
-      updated_at_start,
-      updated_at_end,
-      status,
-    );
+    const { prismaFilter } = this._getFilter(created_at_start, created_at_end);
 
     const skip = Number(page) > 1 ? (Number(page) - 1) * 10 : 0;
 
@@ -57,10 +40,8 @@ export class ApplicationService {
         id: true,
         events: true,
         user: true,
-        status: true,
-        ticketsCount: true,
+        places: true,
         createdAt: true,
-        updatedAt: true,
       },
       skip,
       take: 10,
@@ -80,14 +61,14 @@ export class ApplicationService {
       select: {
         eventId: true,
         userId: true,
-        ticketsCount: true,
+        places: true,
         id: false,
         createdAt: false,
       },
     });
   }
 
-  async getByUserId(userId: string) {
+  async getByUserId(userId: number) {
     return this.prisma.application.findMany({
       where: {
         userId,
@@ -96,28 +77,26 @@ export class ApplicationService {
   }
 
   async create(dto: CreateApplicationDto) {
-    const { userId, eventId, ticketsCount } = dto;
+    const { userId, eventId, places } = dto;
+
+    await this.prisma.event.update({
+      where: { eventId },
+      data: {
+        places: {
+          decrement: places,
+        },
+      },
+    });
 
     await this.prisma.application.create({
       data: {
         userId,
         eventId,
-        ticketsCount,
+        places,
       },
     });
 
     return true;
-  }
-
-  async update(status: EStatus, id: string) {
-    return this.prisma.application.update({
-      where: {
-        id,
-      },
-      data: {
-        status,
-      },
-    });
   }
 
   async delete(id: string) {
@@ -131,17 +110,7 @@ export class ApplicationService {
   private _getSort(sort: EnumApplicationSort, order: EnumSortOrder) {
     const prismaSort: Prisma.ApplicationOrderByWithAggregationInput[] = [];
 
-    if (sort === EnumApplicationSort.ALPHABETIC && order === EnumSortOrder.ASK)
-      prismaSort.push({ status: 'asc' });
-    else if (
-      sort === EnumApplicationSort.ALPHABETIC &&
-      order === EnumSortOrder.DESC
-    )
-      prismaSort.push({ status: 'desc' });
-    else if (
-      sort === EnumApplicationSort.CREATED_AT &&
-      order === EnumSortOrder.ASK
-    )
+    if (sort === EnumApplicationSort.CREATED_AT && order === EnumSortOrder.ASK)
       prismaSort.push({ createdAt: 'asc' });
     else if (
       sort === EnumApplicationSort.CREATED_AT &&
@@ -195,13 +164,7 @@ export class ApplicationService {
     return { prismaSearch };
   }
 
-  private _getFilter(
-    created_at_start: string,
-    created_at_end: string,
-    updated_at_start: string,
-    updated_at_end: string,
-    status: EnumApplicationStatus,
-  ) {
+  private _getFilter(created_at_start: string, created_at_end: string) {
     const prismaFilter: Prisma.ApplicationWhereInput = {};
 
     if (created_at_start) {
@@ -213,20 +176,6 @@ export class ApplicationService {
       prismaFilter.createdAt = {
         lte: new Date(created_at_end),
       };
-    }
-    if (updated_at_start) {
-      prismaFilter.updatedAt = {
-        gte: new Date(updated_at_start),
-      };
-    }
-    if (updated_at_end) {
-      prismaFilter.updatedAt = {
-        lte: new Date(updated_at_end),
-      };
-    }
-
-    if (status) {
-      prismaFilter.status = EnumApplicationStatus[status.toUpperCase()];
     }
 
     return { prismaFilter };

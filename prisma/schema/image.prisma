@@ -1,8 +1,7 @@
 model Image {
-  id   String @id @unique @default(uuid())
-  url  String @unique
-  name String
-
+  id    String       @id @unique @default(uuid())
+  url   String       @unique
+  name  String
   event EventImage[]
   news  NewsImage[]
 }

@@ -6,37 +6,94 @@ import {
   Patch,
   Param,
   Delete,
+  BadRequestException,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+  NotFoundException,
+  HttpCode,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
+import { getManyNewsDto } from './dto/get-all-news.dto';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Controller('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
   @Get()
-  findAll() {
-    return this.newsService.findAll();
+  getNews(@Query() dto: getManyNewsDto) {
+    console.log(dto);
+    return this.newsService.findMany(dto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.newsService.findOne(id);
+  @Get(':newsId')
+  getNewsById(@Param('newsId') newsId: string) {
+    if (!newsId) throw new BadRequestException('Bad request');
+    return this.newsService.findById(newsId);
   }
 
+  @Auth('MODER')
   @Post()
   create(@Body() dto: CreateNewsDto) {
     return this.newsService.create(dto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateNewsDto) {
-    return this.newsService.update(id, dto);
+  @Auth('MODER')
+  @Patch(':newsId')
+  update(@Param('newsId') newsId: string, @Body() dto: UpdateNewsDto) {
+    return this.newsService.update(newsId, dto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.newsService.remove(id);
+  @Auth('MODER')
+  @Delete(':newsId')
+  remove(@Param('newsId') newsId: string) {
+    return this.newsService.remove(newsId);
+  }
+
+  @Auth('MODER')
+  @Post('image')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: 'public/uploads/news',
+        filename: (req, image, cb) => {
+          cb(null, image.originalname);
+        },
+      }),
+    }),
+  )
+  async uploadImage(@UploadedFile() image: Express.Multer.File) {
+    return this.newsService.uploadImage(image);
+  }
+
+  @Auth('MODER')
+  @Delete('image/:filename')
+  async deleteImage(@Param('filename') filename: string) {
+    const imagePath = path.join(
+      __dirname,
+      '../../public/uploads/news',
+      filename,
+    );
+
+    // Проверяем, существует ли файл
+    if (!fs.existsSync(imagePath)) {
+      throw new NotFoundException('Файл не найден');
+    }
+
+    // Удаляем файл
+    fs.unlinkSync(imagePath);
+
+    // Удаляем путь картинки из базы данных
+    this.newsService.deleteImage(filename);
+
+    return HttpCode(200);
   }
 }

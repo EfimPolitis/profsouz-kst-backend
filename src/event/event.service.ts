@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -8,13 +8,13 @@ import {
   EnumEventType,
   EnumSortOrder,
   getAllEventsDto,
-} from './dto/get-all.event.dto';
+} from './dto/get-all-event.dto';
 
 @Injectable()
 export class EventService {
   constructor(private prisma: PrismaService) {}
 
-  async getAll(dto: getAllEventsDto) {
+  async findMany(dto: getAllEventsDto) {
     const { search, sort, order, page, date_start, date_end, type } = dto;
 
     const { prismaSort } = this._getSort(sort, order);
@@ -22,11 +22,15 @@ export class EventService {
     const { prismaFilter } = this._getFilter(date_start, date_end, type);
 
     const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
-    const countEvents = await this.prisma.event.count();
+    const countEvents = await this.prisma.event.count({
+      where: {
+        AND: [prismaSearch, prismaFilter],
+      },
+    });
     const countPage =
       Math.ceil(countEvents / 10) > 1 ? Math.ceil(countEvents / 10) : 0;
 
-    let events = await this.prisma.event.findMany({
+    const data = await this.prisma.event.findMany({
       where: {
         AND: [prismaSearch, prismaFilter],
       },
@@ -58,22 +62,21 @@ export class EventService {
       take: 12,
     });
 
-    return {
-      items: events.map((event) => {
-        const categories = event.categories.map(({ category }) => category);
-        const images = event.images.map(({ image }) => image);
-        return {
-          ...event,
-          categories,
-          images,
-        };
-      }),
-      countPage,
-    };
+    const events = data.map((event) => {
+      const categories = event.categories.map(({ category }) => category);
+      const images = event.images.map(({ image }) => image);
+      return {
+        ...event,
+        categories,
+        images,
+      };
+    });
+
+    return { items: events, countPage };
   }
 
-  async getById(id: string) {
-    const event = await this.prisma.event.findUnique({
+  async findById(id: string) {
+    const data = await this.prisma.event.findUnique({
       where: { eventId: id },
       include: {
         categories: {
@@ -89,11 +92,13 @@ export class EventService {
       },
     });
 
-    return {
-      ...event,
-      categories: event.categories.map(({ category }) => category),
-      images: event.images.map(({ image }) => image),
+    const event = {
+      ...data,
+      categories: data.categories.map(({ category }) => category),
+      images: data.images.map(({ image }) => image),
     };
+
+    return event;
   }
 
   async create(dto: CreateEventDto) {
@@ -103,11 +108,12 @@ export class EventService {
       organizer,
       link,
       date,
-      imagesId,
       categoriesId,
-      totalTickets,
+      imagesId,
+      places,
     } = dto;
 
+    date = new Date(date).toISOString();
     const categories = [];
     const images = [];
 
@@ -131,8 +137,6 @@ export class EventService {
       });
     }
 
-    date = new Date(date).toISOString();
-
     return this.prisma.event.create({
       data: {
         title,
@@ -140,7 +144,7 @@ export class EventService {
         organizer,
         link,
         date,
-        totalTickets,
+        places,
         categories: {
           create: categories,
         },
@@ -158,9 +162,9 @@ export class EventService {
       organizer,
       link,
       date,
-      imagesId,
       categoriesId,
-      totalTickets,
+      imagesId,
+      places,
     } = dto;
 
     const categories = [];
@@ -198,7 +202,7 @@ export class EventService {
         organizer,
         link,
         date,
-        totalTickets,
+        places,
         categories: {
           deleteMany: {
             eventId,
@@ -223,6 +227,45 @@ export class EventService {
     });
   }
 
+  async uploadImage(image: Express.Multer.File) {
+    const oldImage = await this.prisma.image.findUnique({
+      where: {
+        url: `http://localhost:5000/public/uploads/event/${image.filename}`,
+      },
+    });
+
+    if (oldImage === null) {
+      const data = await this.prisma.image.create({
+        data: {
+          url: `http://localhost:5000/public/uploads/event/${image.filename}`,
+          name: image.filename,
+        },
+      });
+
+      const response = {
+        id: data.id,
+        url: data.url,
+      };
+
+      return response;
+    }
+
+    const response = {
+      id: oldImage.id,
+      url: oldImage.url,
+    };
+
+    return response;
+  }
+
+  async deleteImage(filename: string) {
+    await this.prisma.image.delete({
+      where: {
+        url: `http://localhost:5000/public/uploads/event/${filename}`,
+      },
+    });
+  }
+
   private _getSort(sort: EnumEventSort, order: EnumSortOrder) {
     const prismaSort: Prisma.EventOrderByWithAggregationInput[] = [];
 
@@ -235,9 +278,9 @@ export class EventService {
     else if (sort === EnumEventSort.DATE && order === EnumSortOrder.DESC)
       prismaSort.push({ date: 'desc' });
     else if (sort === EnumEventSort.TICKETS && order === EnumSortOrder.ASK)
-      prismaSort.push({ totalTickets: 'asc' });
+      prismaSort.push({ places: 'asc' });
     else if (sort === EnumEventSort.TICKETS && order === EnumSortOrder.DESC)
-      prismaSort.push({ totalTickets: 'desc' });
+      prismaSort.push({ places: 'desc' });
 
     return { prismaSort };
   }

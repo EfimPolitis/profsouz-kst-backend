@@ -13,12 +13,6 @@ export enum EnumSortOrder {
   DESC = 'desc',
 }
 
-export enum EnumApplicationStatus {
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  PENDING = 'PENDING',
-}
-
 export class getAllApplicationsDto {
   page: string;
 
@@ -29,10 +23,6 @@ export class getAllApplicationsDto {
   @IsOptional()
   @IsEnum(EnumSortOrder)
   order?: EnumSortOrder;
-
-  @IsOptional()
-  @IsEnum(EnumApplicationStatus)
-  status?: EnumApplicationStatus;
 
   @IsOptional()
   @IsDateString()

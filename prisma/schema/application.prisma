@@ -1,19 +1,9 @@
 model Application {
-  id           String   @id @default(uuid())
-  ticketsCount Int      @map("tickets_count")
-  status       EStatus  @default(PENDING)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt()
-
-  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  userId String
-
-  events  Event  @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
-  eventId String
-}
-
-enum EStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  id        String   @id @default(uuid())
+  places    Int
+  createdAt DateTime @default(now())
+  userId    Int
+  eventId   String
+  events    Event    @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 }

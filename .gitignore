@@ -5,6 +5,7 @@
 /.VSCodeCounter
 /prisma
 .env
+/files
 
 # Logs
 logs

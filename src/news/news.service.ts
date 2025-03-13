@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
 import { PrismaService } from 'src/prisma.service';
-import {
-  EnumNewsSort,
-  EnumSortOrder,
-  getManyNewsDto,
-} from './dto/get-all-news.dto';
+import { EnumNewsSort, getManyNewsDto } from './dto/get-all-news.dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -14,9 +10,9 @@ export class NewsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findMany(dto: getManyNewsDto) {
-    const { page, sort, order, search, created_at_start, created_at_end } = dto;
+    const { page, sort, search, created_at_start, created_at_end } = dto;
 
-    const { prismaSort } = this._getSort(sort, order);
+    const { prismaSort } = this._getSort(sort);
     const { prismaSearch } = this._getSearch(search);
     const { prismaFilter } = this._getFilter(created_at_start, created_at_end);
 
@@ -28,7 +24,7 @@ export class NewsService {
       },
     });
     const countPage =
-      Math.ceil(countNews / 10) > 1 ? Math.ceil(countNews / 10) : 0;
+      Math.ceil(countNews / 12) > 1 ? Math.ceil(countNews / 12) : 0;
 
     const data = await this.prisma.news.findMany({
       where: {
@@ -49,7 +45,7 @@ export class NewsService {
         },
       },
       skip,
-      take: 10,
+      take: 12,
     });
 
     const news = data.map((news) => {
@@ -64,11 +60,6 @@ export class NewsService {
   }
 
   async findById(newsId: string) {
-    await this.prisma.news.update({
-      where: { newsId },
-      data: { views: { increment: 1 } },
-    });
-
     const data = await this.prisma.news.findUnique({
       where: {
         newsId,
@@ -150,6 +141,13 @@ export class NewsService {
     });
   }
 
+  async updateView(newsId: string) {
+    return await this.prisma.news.update({
+      where: { newsId },
+      data: { views: { increment: 1 } },
+    });
+  }
+
   async remove(newsId: string) {
     return this.prisma.news.delete({
       where: {
@@ -161,14 +159,14 @@ export class NewsService {
   async uploadImage(image: Express.Multer.File) {
     const oldImage = await this.prisma.image.findUnique({
       where: {
-        url: `http://localhost:5000/public/uploads/news/${image.filename}`,
+        url: `http://localhost:5000/api/public/uploads/news/${image.filename}`,
       },
     });
 
     if (oldImage === null) {
       const data = await this.prisma.image.create({
         data: {
-          url: `http://localhost:5000/public/uploads/news/${image.filename}`,
+          url: `http://localhost:5000/api/public/uploads/news/${image.filename}`,
           name: image.filename,
         },
       });
@@ -176,6 +174,7 @@ export class NewsService {
       const response = {
         id: data.id,
         url: data.url,
+        name: data.name,
       };
 
       return response;
@@ -183,6 +182,7 @@ export class NewsService {
 
     const response = {
       id: oldImage.id,
+      name: oldImage.name,
       url: oldImage.url,
     };
 
@@ -190,27 +190,39 @@ export class NewsService {
   }
 
   async deleteImage(filename: string) {
-    await this.prisma.image.delete({
+    const countEventsWithCurrentImage = await this.prisma.newsImage.findMany({
       where: {
-        url: `http://localhost:5000/public/uploads/news/${filename}`,
+        image: {
+          url: {
+            contains: filename,
+          },
+        },
       },
     });
+
+    if (countEventsWithCurrentImage.length > 1) return false;
+
+    await this.prisma.image.delete({
+      where: {
+        url: `http://localhost:5000/api/public/uploads/news/${filename}`,
+      },
+    });
+
+    return true;
   }
 
-  private _getSort(sort: EnumNewsSort, order: EnumSortOrder) {
+  private _getSort(sort: EnumNewsSort) {
     const prismaSort: Prisma.NewsOrderByWithAggregationInput[] = [];
 
-    if (sort === EnumNewsSort.ALPHABETIC && order === EnumSortOrder.ASK)
-      prismaSort.push({ title: 'asc' });
-    else if (sort === EnumNewsSort.ALPHABETIC && order === EnumSortOrder.DESC)
+    if (sort === EnumNewsSort.ALPHABETIC_ASC) prismaSort.push({ title: 'asc' });
+    else if (sort === EnumNewsSort.ALPHABETIC_DESC)
       prismaSort.push({ title: 'desc' });
-    else if (sort === EnumNewsSort.VIEWS && order === EnumSortOrder.ASK)
-      prismaSort.push({ views: 'asc' });
-    else if (sort === EnumNewsSort.VIEWS && order === EnumSortOrder.DESC)
+    else if (sort === EnumNewsSort.VIEWS_ASC) prismaSort.push({ views: 'asc' });
+    else if (sort === EnumNewsSort.VIEWS_DESC)
       prismaSort.push({ views: 'desc' });
-    else if (sort === EnumNewsSort.CREATED_AT && order === EnumSortOrder.ASK)
+    else if (sort === EnumNewsSort.CREATED_AT_ASC)
       prismaSort.push({ createdAt: 'asc' });
-    else if (sort === EnumNewsSort.CREATED_AT && order === EnumSortOrder.DESC)
+    else if (sort === EnumNewsSort.CREATED_AT_DESC)
       prismaSort.push({ createdAt: 'desc' });
 
     return { prismaSort };

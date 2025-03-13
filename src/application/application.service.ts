@@ -4,7 +4,6 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { Prisma } from '@prisma/client';
 import {
   EnumApplicationSort,
-  EnumSortOrder,
   getAllApplicationsDto,
 } from './dto/get-all-application.dto';
 
@@ -13,9 +12,9 @@ export class ApplicationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAll(dto: getAllApplicationsDto) {
-    const { search, sort, order, page, created_at_start, created_at_end } = dto;
+    const { search, sort, page, created_at_start, created_at_end } = dto;
 
-    const { prismaSort } = this._getSort(sort, order);
+    const { prismaSort } = this._getSort(sort);
     const { prismaSearch } = this._getSearch(search);
     const { prismaFilter } = this._getFilter(created_at_start, created_at_end);
 
@@ -38,8 +37,18 @@ export class ApplicationService {
       orderBy: prismaSort,
       select: {
         id: true,
-        events: true,
-        user: true,
+        event: {
+          select: {
+            title: true,
+          },
+        },
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            middleName: true,
+          },
+        },
         places: true,
         createdAt: true,
       },
@@ -68,12 +77,61 @@ export class ApplicationService {
     });
   }
 
-  async getByUserId(userId: number) {
-    return this.prisma.application.findMany({
-      where: {
-        userId,
-      },
+  async getByUserId(userId: string) {
+    const applications = await this.prisma.application.groupBy({
+      by: ['eventId'],
+      where: { userId },
+      _sum: { places: true },
     });
+
+    const data = [];
+
+    for (let application of applications) {
+      const event = await this.prisma.event.findUnique({
+        where: {
+          eventId: application.eventId,
+        },
+        include: {
+          images: {
+            select: {
+              image: {
+                select: {
+                  id: true,
+                  name: true,
+                  url: true,
+                },
+              },
+            },
+          },
+          categories: {
+            select: {
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!event) continue;
+
+      data.push({
+        event: {
+          ...event,
+          images: event.images.map((img) => img.image), // убираем вложенность
+          categories: event.categories.map((cat) => cat.category), // убираем вложенность
+        },
+        takePlaces: application._sum.places,
+      });
+    }
+
+    return {
+      items: data,
+      countPage: 0,
+    };
   }
 
   async create(dto: CreateApplicationDto) {
@@ -107,15 +165,16 @@ export class ApplicationService {
     });
   }
 
-  private _getSort(sort: EnumApplicationSort, order: EnumSortOrder) {
+  private _getSort(sort: EnumApplicationSort) {
     const prismaSort: Prisma.ApplicationOrderByWithAggregationInput[] = [];
 
-    if (sort === EnumApplicationSort.CREATED_AT && order === EnumSortOrder.ASK)
+    if (sort === EnumApplicationSort.PLACES_ASK)
+      prismaSort.push({ places: 'asc' });
+    else if (sort === EnumApplicationSort.PLACES_DESC)
+      prismaSort.push({ places: 'desc' });
+    else if (sort === EnumApplicationSort.CREATED_AT_ASC)
       prismaSort.push({ createdAt: 'asc' });
-    else if (
-      sort === EnumApplicationSort.CREATED_AT &&
-      order === EnumSortOrder.DESC
-    )
+    else if (sort === EnumApplicationSort.CREATED_AT_DESC)
       prismaSort.push({ createdAt: 'desc' });
 
     return { prismaSort };
@@ -150,7 +209,7 @@ export class ApplicationService {
               },
             },
             {
-              events: {
+              event: {
                 title: {
                   contains: search,
                   mode: 'insensitive',

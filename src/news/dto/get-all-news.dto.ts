@@ -1,14 +1,12 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export enum EnumNewsSort {
-  ALPHABETIC = 'alphabetic',
-  VIEWS = 'views',
-  CREATED_AT = 'CREATED_AT',
-}
-
-export enum EnumSortOrder {
-  ASK = 'asc',
-  DESC = 'desc',
+  ALPHABETIC_ASC = '1',
+  ALPHABETIC_DESC = '2',
+  VIEWS_ASC = '3',
+  VIEWS_DESC = '4',
+  CREATED_AT_ASC = '5',
+  CREATED_AT_DESC = '6',
 }
 
 export class getManyNewsDto {
@@ -24,22 +22,10 @@ export class getManyNewsDto {
   sort?: EnumNewsSort;
 
   @IsOptional()
-  @IsEnum(EnumSortOrder)
-  order?: EnumSortOrder;
-
-  @IsOptional()
   @IsString()
   created_at_start?: string;
 
   @IsOptional()
   @IsString()
   created_at_end?: string;
-
-  @IsOptional()
-  @IsString()
-  updated_at_start?: string;
-
-  @IsOptional()
-  @IsString()
-  updated_at_end?: string;
 }

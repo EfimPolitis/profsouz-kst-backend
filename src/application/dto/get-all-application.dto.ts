@@ -1,16 +1,10 @@
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export enum EnumApplicationSort {
-  ALPHABETIC = 'alphabetic',
-  STATUS = 'status',
-  TICKETS_COUNT = 'tickets_count',
-  CREATED_AT = 'created_at',
-  UPDATED_AT = 'updated_at',
-}
-
-export enum EnumSortOrder {
-  ASK = 'asc',
-  DESC = 'desc',
+  PLACES_ASK = '1',
+  PLACES_DESC = '2',
+  CREATED_AT_ASC = '3',
+  CREATED_AT_DESC = '4',
 }
 
 export class getAllApplicationsDto {
@@ -21,24 +15,12 @@ export class getAllApplicationsDto {
   sort?: EnumApplicationSort;
 
   @IsOptional()
-  @IsEnum(EnumSortOrder)
-  order?: EnumSortOrder;
-
-  @IsOptional()
   @IsDateString()
   created_at_start?: string;
 
   @IsDateString()
   @IsOptional()
   created_at_end?: string;
-
-  @IsDateString()
-  @IsOptional()
-  updated_at_start?: string;
-
-  @IsDateString()
-  @IsOptional()
-  updated_at_end?: string;
 
   @IsOptional()
   @IsString()

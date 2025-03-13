@@ -5,15 +5,14 @@ import { UserModule } from './user/user.module';
 import { EventModule } from './event/event.module';
 import { ApplicationModule } from './application/application.module';
 import { CategoryModule } from './category/category.module';
-import { AppController } from './app.controller';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { PrismaService } from './prisma.service';
 import { NewsModule } from './news/news.module';
 import { MulterModule } from '@nestjs/platform-express';
+import { DownloadModule } from './download/download.module';
 
 @Module({
-  controllers: [AppController],
   imports: [
     ConfigModule.forRoot(),
     AuthModule,
@@ -22,8 +21,10 @@ import { MulterModule } from '@nestjs/platform-express';
     ApplicationModule,
     CategoryModule,
     NewsModule,
+    DownloadModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..'),
+      serveRoot: '/api',
     }),
     MulterModule.register({
       dest: './public/uploads',

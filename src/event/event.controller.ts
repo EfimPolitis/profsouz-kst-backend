@@ -4,14 +4,15 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
   NotFoundException,
   Param,
   Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
-  UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { EventService } from './event.service';
@@ -23,16 +24,40 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Response } from 'express';
+import { ReportService } from 'src/report/report.service';
 
 @Controller('event')
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(
+    private readonly eventService: EventService,
+    private readonly reportService: ReportService,
+  ) {}
 
+  @Auth('')
   @Get()
   async getEvents(@Query() dto: getAllEventsDto) {
     return this.eventService.findMany(dto);
   }
 
+  @Auth('MODER')
+  @Get('report')
+  @Header(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  )
+  async downloadReport(@Res() res: Response) {
+    let buffer = await this.reportService.generateEventReport();
+    let fileName = `event_report_${new Date(Date.now()).toISOString().slice(0, -14)}`;
+
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename*=UTF-8''${fileName}`,
+    );
+    res.send(buffer);
+  }
+
+  @Auth('')
   @Get(':id')
   async getEventsById(@Param('id') id: string) {
     if (!id) throw new BadRequestException('Bad request');
@@ -87,11 +112,11 @@ export class EventController {
       throw new NotFoundException('Файл не найден');
     }
 
-    // Удаляем файл
-    fs.unlinkSync(imagePath);
-
     // Удаляем путь картинки из базы данных
-    this.eventService.deleteImage(filename);
+    const boolean = await this.eventService.deleteImage(filename);
+
+    // Удаляем файл
+    if (boolean) fs.unlinkSync(imagePath);
 
     return HttpCode(200);
   }

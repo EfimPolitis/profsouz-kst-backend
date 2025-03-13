@@ -2,8 +2,8 @@ model Application {
   id        String   @id @default(uuid())
   places    Int
   createdAt DateTime @default(now())
-  userId    Int
+  userId    String
   eventId   String
-  events    Event    @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [eventId], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 }

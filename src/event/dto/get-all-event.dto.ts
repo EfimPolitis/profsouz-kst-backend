@@ -1,19 +1,13 @@
-import { IsEnum, IsOptional, IsDateString, IsString } from 'class-validator';
+import { EStatus } from '@prisma/client';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 
 export enum EnumEventSort {
-  ALPHABETIC = 'alphabetic',
-  TICKETS = 'tickets',
-  DATE = 'date',
-}
-
-export enum EnumSortOrder {
-  ASK = 'asc',
-  DESC = 'desc',
-}
-
-export enum EnumEventType {
-  LINK = 'link',
-  TICKET = 'ticket',
+  ALPHABETIC_ASC = '1',
+  ALPHABETIC_DESC = '2',
+  PLACES_ASC = '3',
+  PLACES_DESC = '4',
+  DATE_ASC = '5',
+  DATE_DESC = '6',
 }
 
 export class getAllEventsDto {
@@ -29,18 +23,22 @@ export class getAllEventsDto {
   search?: string;
 
   @IsOptional()
-  @IsEnum(EnumSortOrder)
-  order?: EnumSortOrder;
+  @IsString()
+  date_start?: string;
 
   @IsOptional()
-  @IsDateString()
-  date_start: string;
+  @IsString()
+  date_end?: string;
 
   @IsOptional()
-  @IsDateString()
-  date_end: string;
+  @IsString()
+  time_start?: string;
 
   @IsOptional()
-  @IsEnum(EnumEventType)
-  type: EnumEventType;
+  @IsString()
+  time_end?: string;
+
+  @IsOptional()
+  @IsEnum(EStatus)
+  status?: EStatus;
 }

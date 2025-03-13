@@ -6,10 +6,12 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { getAllCategoriesDto } from './dto/get-all-categories.dto';
 
 @Controller('category')
 export class CategoryController {
@@ -17,8 +19,8 @@ export class CategoryController {
 
   @Auth('')
   @Get()
-  async getCategories() {
-    return this.categoryService.getAll();
+  async getCategories(@Query() dto: getAllCategoriesDto) {
+    return this.categoryService.getAll(dto);
   }
 
   @Auth('MODER')

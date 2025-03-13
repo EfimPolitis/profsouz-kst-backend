@@ -2,24 +2,34 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { Prisma } from '@prisma/client';
-import {
-  EnumEventSort,
-  EnumEventType,
-  EnumSortOrder,
-  getAllEventsDto,
-} from './dto/get-all-event.dto';
+import { EStatus, Prisma } from '@prisma/client';
+import { EnumEventSort, getAllEventsDto } from './dto/get-all-event.dto';
 
 @Injectable()
 export class EventService {
   constructor(private prisma: PrismaService) {}
 
   async findMany(dto: getAllEventsDto) {
-    const { search, sort, order, page, date_start, date_end, type } = dto;
+    const {
+      search,
+      sort,
+      page,
+      date_start,
+      date_end,
+      time_start,
+      time_end,
+      status,
+    } = dto;
 
-    const { prismaSort } = this._getSort(sort, order);
+    const { prismaSort } = this._getSort(sort);
     const { prismaSearch } = this._getSearch(search);
-    const { prismaFilter } = this._getFilter(date_start, date_end, type);
+    const { prismaFilter } = this._getFilter(
+      date_start,
+      date_end,
+      time_start,
+      time_end,
+      status,
+    );
 
     const skip = Number(page) > 1 ? (Number(page) - 1) * 12 : 0;
     const countEvents = await this.prisma.event.count({
@@ -28,7 +38,7 @@ export class EventService {
       },
     });
     const countPage =
-      Math.ceil(countEvents / 10) > 1 ? Math.ceil(countEvents / 10) : 0;
+      Math.ceil(countEvents / 12) > 1 ? Math.ceil(countEvents / 12) : 0;
 
     const data = await this.prisma.event.findMany({
       where: {
@@ -111,6 +121,7 @@ export class EventService {
       categoriesId,
       imagesId,
       places,
+      status,
     } = dto;
 
     date = new Date(date).toISOString();
@@ -145,6 +156,7 @@ export class EventService {
         link,
         date,
         places,
+        status,
         categories: {
           create: categories,
         },
@@ -165,6 +177,7 @@ export class EventService {
       categoriesId,
       imagesId,
       places,
+      status,
     } = dto;
 
     const categories = [];
@@ -203,6 +216,7 @@ export class EventService {
         link,
         date,
         places,
+        status,
         categories: {
           deleteMany: {
             eventId,
@@ -230,14 +244,14 @@ export class EventService {
   async uploadImage(image: Express.Multer.File) {
     const oldImage = await this.prisma.image.findUnique({
       where: {
-        url: `http://localhost:5000/public/uploads/event/${image.filename}`,
+        url: `http://localhost:5000/api/public/uploads/event/${image.filename}`,
       },
     });
 
     if (oldImage === null) {
       const data = await this.prisma.image.create({
         data: {
-          url: `http://localhost:5000/public/uploads/event/${image.filename}`,
+          url: `http://localhost:5000/api/public/uploads/event/${image.filename}`,
           name: image.filename,
         },
       });
@@ -245,6 +259,7 @@ export class EventService {
       const response = {
         id: data.id,
         url: data.url,
+        name: data.name,
       };
 
       return response;
@@ -252,6 +267,7 @@ export class EventService {
 
     const response = {
       id: oldImage.id,
+      name: oldImage.name,
       url: oldImage.url,
     };
 
@@ -259,27 +275,43 @@ export class EventService {
   }
 
   async deleteImage(filename: string) {
-    await this.prisma.image.delete({
+    const countEventsWithCurrentImage = await this.prisma.eventImage.findMany({
       where: {
-        url: `http://localhost:5000/public/uploads/event/${filename}`,
+        image: {
+          url: {
+            contains: filename,
+          },
+        },
       },
     });
+
+    if (countEventsWithCurrentImage.length > 1) {
+      console.log(countEventsWithCurrentImage);
+      return false;
+    }
+
+    await this.prisma.image.delete({
+      where: {
+        url: `http://localhost:5000/api/public/uploads/event/${filename}`,
+      },
+    });
+
+    return true;
   }
 
-  private _getSort(sort: EnumEventSort, order: EnumSortOrder) {
+  private _getSort(sort: EnumEventSort) {
     const prismaSort: Prisma.EventOrderByWithAggregationInput[] = [];
 
-    if (sort === EnumEventSort.ALPHABETIC && order === EnumSortOrder.ASK)
+    if (sort === EnumEventSort.ALPHABETIC_ASC)
       prismaSort.push({ title: 'asc' });
-    else if (sort === EnumEventSort.ALPHABETIC && order === EnumSortOrder.DESC)
+    else if (sort === EnumEventSort.ALPHABETIC_DESC)
       prismaSort.push({ title: 'desc' });
-    else if (sort === EnumEventSort.DATE && order === EnumSortOrder.ASK)
-      prismaSort.push({ date: 'asc' });
-    else if (sort === EnumEventSort.DATE && order === EnumSortOrder.DESC)
+    else if (sort === EnumEventSort.DATE_ASC) prismaSort.push({ date: 'asc' });
+    else if (sort === EnumEventSort.DATE_DESC)
       prismaSort.push({ date: 'desc' });
-    else if (sort === EnumEventSort.TICKETS && order === EnumSortOrder.ASK)
+    else if (sort === EnumEventSort.PLACES_ASC)
       prismaSort.push({ places: 'asc' });
-    else if (sort === EnumEventSort.TICKETS && order === EnumSortOrder.DESC)
+    else if (sort === EnumEventSort.PLACES_DESC)
       prismaSort.push({ places: 'desc' });
 
     return { prismaSort };
@@ -323,24 +355,36 @@ export class EventService {
   private _getFilter(
     date_start: string,
     date_end: string,
-    type: EnumEventType,
+    time_start: string,
+    time_end: string,
+    status: EStatus,
   ) {
     const prismaFilter: Prisma.EventWhereInput = {};
 
     if (date_start) {
       prismaFilter.date = {
-        gte: new Date(date_start),
+        gte: date_start,
       };
     }
     if (date_end) {
       prismaFilter.date = {
-        lte: new Date(date_end),
+        lte: date_end,
       };
     }
-    if (type) {
-      const withLink = type === 'link';
-
-      prismaFilter.link = withLink ? { not: '' } : '';
+    if (time_start) {
+      prismaFilter.date = {
+        gte: time_start,
+      };
+    }
+    if (time_end) {
+      prismaFilter.date = {
+        lte: time_end,
+      };
+    }
+    if (status) {
+      prismaFilter.status = {
+        equals: status,
+      };
     }
 
     return { prismaFilter };

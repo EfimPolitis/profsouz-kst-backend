@@ -1,5 +1,6 @@
 import { Optional } from '@nestjs/common';
-import { IsNumber, IsString } from 'class-validator';
+import { EStatus } from '@prisma/client';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -25,4 +26,8 @@ export class CreateEventDto {
   @Optional()
   @IsNumber()
   places?: number;
+
+  @IsOptional()
+  @IsEnum(EStatus)
+  status?: EStatus;
 }

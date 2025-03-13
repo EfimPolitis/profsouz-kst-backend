@@ -1,5 +1,5 @@
 model User {
-  userId      Int           @id @unique @default(autoincrement()) @map("user_id")
+  userId      String        @id @unique @default(uuid()) @map("user_id")
   email       String        @unique @map("email")
   firstName   String        @map("first_name")
   lastName    String        @map("last_name")

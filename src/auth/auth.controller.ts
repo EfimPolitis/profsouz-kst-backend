@@ -34,7 +34,7 @@ export class AuthController {
     return response;
   }
 
-  // @Auth('ADMIN')
+  @Auth('ADMIN')
   @UsePipes(new ValidationPipe())
   @HttpCode(200)
   @Post('register')

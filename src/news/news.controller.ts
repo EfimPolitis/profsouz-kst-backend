@@ -30,8 +30,12 @@ export class NewsController {
 
   @Get()
   getNews(@Query() dto: getManyNewsDto) {
-    console.log(dto);
     return this.newsService.findMany(dto);
+  }
+
+  @Post('views/:newsId')
+  updateView(@Param('newsId') newsId: string) {
+    return this.newsService.updateView(newsId);
   }
 
   @Get(':newsId')
@@ -88,11 +92,11 @@ export class NewsController {
       throw new NotFoundException('Файл не найден');
     }
 
-    // Удаляем файл
-    fs.unlinkSync(imagePath);
-
     // Удаляем путь картинки из базы данных
-    this.newsService.deleteImage(filename);
+    const boolean = await this.newsService.deleteImage(filename);
+
+    // Удаляем файл
+    if (boolean) fs.unlinkSync(imagePath);
 
     return HttpCode(200);
   }

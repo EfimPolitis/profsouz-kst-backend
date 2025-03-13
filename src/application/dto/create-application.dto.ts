@@ -2,7 +2,7 @@ import { IsNumber, IsString } from 'class-validator';
 
 export class CreateApplicationDto {
   @IsString()
-  userId: number;
+  userId: string;
 
   @IsString()
   eventId: string;
